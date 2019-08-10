@@ -25,7 +25,11 @@ while 1:
             if not choosed:
                 choosed = check_pieces(mouse_pos)
             else:
+                
+                mouse_pos = calculate_pos(mouse_pos)
                 choosed.pos = mouse_pos
+                choosed.choosed = False
+                choosed = None
 
     pygame.display.flip()
     clock.tick(10)
