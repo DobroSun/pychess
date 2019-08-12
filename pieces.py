@@ -2,9 +2,11 @@
 
 
 import pygame
+import abc
+
+
 from display import *
 
-import abc
 
 
 pygame.init()
@@ -12,6 +14,9 @@ list_ = []
 
 class Piece(abc.ABC):
     def possible_moves():
+        pass
+
+    def draw_moves():
         pass
 
     def draw():
@@ -31,15 +36,82 @@ class Pawn(Piece, pygame.sprite.Sprite):
         if self.color:
             self.image = pygame.image.load('assets/Chess_plt60.png')
             self.pos = (board[6][ind][0], board[6][ind][1])
+            self.x, self.y = 6, ind
         else:
             self.image = pygame.image.load('assets/Chess_pdt60.png')
             self.pos = (board[1][ind-8][0], board[1][ind-8][1])
+            self.x, self.y = 1, ind-8
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
 
+    def can_attack(self):
+        attack_moves = []
+        if self.color == 0:
+            for item in list_:
+                if item.color == 1 and self.x + 1 == item.x and self.y + 1 == item.y:
+                    attack_moves.append((self.x + 1, self.y + 1))
+                elif item.color == 1 and self.x + 1 == item.x and self.y - 1 == item.y:
+                    attack_moves.append((self.x + 1, self.y - 1))
+        else:
+            for item in list_:
+                if item.color == 0 and self.x - 1 == item.x and self.y + 1 == item.y:
+                    attack_moves.append((self.x - 1, self.y + 1))
+                elif item.color == 0 and self.x - 1 == item.x and self.y - 1 == item.y:
+                    attack_moves.append((self.x - 1, self.y - 1))
+            
+        return attack_moves
+
+    def attack(self, i, j):
+        for item in list_:
+            if item.x == i and item.y == j:
+                list_.remove(item)
+                return 
 
     def possible_moves(self):
-        pass
+        
+        if self.color == 0:
+            possible_moves = [(self.x + 1, self.y) if self.x + 1 <= 7 else (self.x, self.y)]
+            if self.x == 1:
+                possible_moves.append((self.x + 2, self.y))
+            
+            tmp = list_.pop(list_.index(self))
+            
+            for move in possible_moves:
+                for item in list_:
+                    if item.x == move[0] and item.y == move[1]:
+                        wrong_move = possible_moves.pop(possible_moves.index(move))
+                        for move in possible_moves:
+                            if move[0] > wrong_move[0] and move[1] == wrong_move[1]:
+                                possible_moves.remove(move)
 
+        else:
+            possible_moves = [(self.x - 1, self.y) if self.x - 1 >= 0 else (self.x, self.y)]
+            
+            if self.x == 6:
+                possible_moves.append((self.x - 2, self.y))
+            
+            tmp = list_.pop(list_.index(self))
+            
+            for move in possible_moves:
+                for item in list_:
+                    if item.x == move[0] and item.y == move[1]:
+                        wrong_move = possible_moves.pop(possible_moves.index(move))
+                        for move in possible_moves:
+                            if move[0] < wrong_move[0] and move[1] == wrong_move[1]:
+                                possible_moves.remove(move)
+
+            
+        attack_moves = self.can_attack()
+        list_.append(tmp)
+        return possible_moves, attack_moves
+
+    def draw_moves(self):
+        possible_moves, attack_moves  = self.possible_moves()
+        possible_moves.extend(attack_moves)
+        
+        for move in possible_moves:
+            pygame.draw.circle(display, (192, 192, 192), 
+                               (board[move[0]][move[1]][0] + 30, board[move[0]][move[1]][1] + 30), 10)
+        
     def draw(self, image, pos):
         display.blit(image, pos)
         self.size = (pos[0], pos[0] + WIDTH), (pos[1], pos[1] + HEIGHT)
@@ -56,14 +128,57 @@ class King(Piece, pygame.sprite.Sprite):
         if self.color:
             self.image = pygame.image.load('assets/Chess_klt60.png')
             self.pos = (board[7][3][0], board[7][3][1])
+            self.x, self.y = 7, 3
         else:
             self.image = pygame.image.load('assets/Chess_kdt60.png')
             self.pos = (board[0][3][0], board[0][3][1])
+            self.x, self.y = 0, 3
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
 
 
     def possible_moves(self):
-        pass
+        attack_moves = []
+        possible_moves = [(self.x + 1, self.y), (self.x - 1, self.y), (self.x, self.y + 1), (self.x, self.y - 1), \
+                          (self.x + 1, self.y + 1), (self.x + 1, self.y - 1), (self.x - 1, self.y + 1), \
+                          (self.x - 1, self.y - 1)]
+
+        moves = []
+        for move in possible_moves:
+            if (0 <= move[0] <= 7) and (0 <= move[1] <= 7):
+                moves.append(move)
+        possible_moves = moves
+        
+        tmp = list_.pop(list_.index(self))
+
+        wrong_moves = []
+        
+        for move in possible_moves:
+            for item in list_:
+                if item.x == move[0] and item.y == move[1]:
+                    wrong_moves.append(move)
+                    if item.color != self.color:
+                        attack_moves.append(move)
+
+        for move in wrong_moves:
+            possible_moves.remove(move)
+
+        list_.append(tmp)
+        return possible_moves, attack_moves
+
+    def draw_moves(self):
+        possible_moves, attack_moves  = self.possible_moves()
+        possible_moves.extend(attack_moves)
+        
+        for move in possible_moves:
+            pygame.draw.circle(display, (192, 192, 192), 
+                               (board[move[0]][move[1]][0] + 30, board[move[0]][move[1]][1] + 30), 10)
+        
+    def attack(self, i, j):
+        for item in list_:
+            if item.x == i and item.y == j:
+                list_.remove(item)
+                return 
+
 
     def draw(self, image, pos):
         display.blit(image, pos)
@@ -81,14 +196,20 @@ class Queen(Piece, pygame.sprite.Sprite):
         if self.color:
             self.image = pygame.image.load('assets/Chess_qlt60.png')
             self.pos = (board[7][4][0], board[7][4][1])
+            self.x, self.y = 7, 4
         else:
             self.image = pygame.image.load('assets/Chess_qdt60.png')
             self.pos = (board[0][4][0], board[0][4][1])
+            self.x, self.y = 0, 4
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
 
 
     def possible_moves(self):
         pass
+
+    def draw_moves(self):
+        pass
+
 
     def draw(self, image, pos):
         display.blit(image, pos)
@@ -106,14 +227,97 @@ class Rock(Piece, pygame.sprite.Sprite):
         if self.color:
             self.image = pygame.image.load('assets/Chess_rlt60.png')
             self.pos = (board[7][ind][0], board[7][ind][1])
+            self.x, self.y = 7, ind
         else:
             self.image = pygame.image.load('assets/Chess_rdt60.png')
             self.pos = (board[0][ind-1][0], board[0][ind-1][1])
+            self.x, self.y = 0, ind-1
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
 
-
     def possible_moves(self):
-        pass
+        attack_moves = []
+        possible_moves = []
+
+        tmp = 0
+        while 0 <= tmp <= 7:
+            if tmp == self.x:
+                tmp += 1
+                continue
+            possible_moves.append((tmp, self.y))
+            tmp += 1
+
+        tmp = 0
+        while 0 <= tmp <= 7:
+            if tmp == self.y:
+                tmp += 1
+                continue
+            possible_moves.append((self.x, tmp))
+            tmp += 1
+
+
+       
+
+        tmp = list_.pop(list_.index(self))
+
+        wrong_moves = []
+        
+        for move in possible_moves:
+            for item in list_:
+                if item.x == move[0] and item.y == move[1]:
+                    wrong_moves.append(move)
+                   
+
+                    if move[0] == self.x:       
+                        if self.y > move[1]:       
+                            cur = move[1]     
+                            while cur > 0:                                                    
+                                cur -= 1
+                                wrong_moves.append((move[0], cur)) if (move[0], cur) not in wrong_moves else wrong_moves
+                        if self.y < move[1]:                           
+                            cur = move[1]                   
+                            while cur < 7:                                         
+                                cur += 1                    
+                                wrong_moves.append((move[0], cur)) if (move[0], cur) not in wrong_moves else wrong_moves
+                    elif move[1] == self.y:                
+                        if self.x > move[0]:                                
+                            cur = move[0]                
+                            while cur > 0:                                               
+                                cur -= 1          
+                                wrong_moves.append((cur, move[1])) if (cur, move[1]) not in wrong_moves else wrong_moves
+                        if self.x < move[0]:                          
+                            cur = move[0]     
+                            while cur < 7:                                             
+                                cur += 1
+                                wrong_moves.append((cur, move[1])) if (cur, move[1]) not in wrong_moves else wrong_moves
+                    if item.color != self.color:
+                        attack_moves.append(move)
+        
+        return possible_moves, wrong_moves                 
+
+        for move in wrong_moves:                                       
+            possible_moves.remove(move)  
+        
+        attack_moves = [] if possible_moves == [] else attack_moves
+
+        list_.append(tmp)
+        return possible_moves, attack_moves
+
+       
+
+    def draw_moves(self):
+        possible_moves, attack_moves  = self.possible_moves()
+        possible_moves.extend(attack_moves)
+        
+        for move in possible_moves:
+            pygame.draw.circle(display, (192, 192, 192), 
+                               (board[move[0]][move[1]][0] + 30, board[move[0]][move[1]][1] + 30), 10)
+        
+    def attack(self, i, j):
+        for item in list_:
+            if item.x == i and item.y == j:
+                list_.remove(item)
+                return 
+
 
     def draw(self, image, pos):
         display.blit(image, pos)
@@ -131,14 +335,13 @@ class Bishop(Piece, pygame.sprite.Sprite):
         if self.color:
             self.image = pygame.image.load('assets/Chess_blt60.png')
             self.pos = (board[7][ind][0], board[7][ind][1])
+            self.x, self.y = 7, ind
         else:
             self.image = pygame.image.load('assets/Chess_bdt60.png')
             self.pos = (board[0][ind-1][0], board[0][ind-1][1])
+            self.x, self.y = 0, ind-1
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
 
-
-    def possible_moves(self):
-        pass
 
     def draw(self, image, pos):
         display.blit(image, pos)
@@ -156,14 +359,57 @@ class Knight(Piece, pygame.sprite.Sprite):
         if self.color:
             self.image = pygame.image.load('assets/Chess_nlt60.png')
             self.pos = (board[7][ind][0], board[7][ind][1])
+            self.x, self.y = 7, ind
         else:
             self.image = pygame.image.load('assets/Chess_ndt60.png')
             self.pos = (board[0][ind-1][0], board[0][ind-1][1])
+            self.x, self.y = 0, ind-1
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
 
-
+ 
     def possible_moves(self):
-        pass
+        attack_moves = []
+        possible_moves = [(self.x + 2, self.y + 1), (self.x + 2, self.y - 1), (self.x + 1, self.y + 2), \
+                          (self.x + 1, self.y - 2), (self.x - 1, self.y + 2), (self.x - 1, self.y - 2), \
+                          (self.x - 2, self.y + 1), (self.x - 2, self.y - 1)]
+
+        moves = []
+        for move in possible_moves:
+            if (0 <= move[0] <= 7) and (0 <= move[1] <= 7):
+                moves.append(move)
+        possible_moves = moves
+        
+        tmp = list_.pop(list_.index(self))
+
+        wrong_moves = []
+        
+        for move in possible_moves:
+            for item in list_:
+                if item.x == move[0] and item.y == move[1]:
+                    wrong_moves.append(move)
+                    if item.color != self.color:
+                        attack_moves.append(move)
+
+        for move in wrong_moves:
+            possible_moves.remove(move)
+
+        list_.append(tmp)
+        return possible_moves, attack_moves
+
+    def draw_moves(self):
+        possible_moves, attack_moves  = self.possible_moves()
+        possible_moves.extend(attack_moves)
+        
+        for move in possible_moves:
+            pygame.draw.circle(display, (192, 192, 192), 
+                               (board[move[0]][move[1]][0] + 30, board[move[0]][move[1]][1] + 30), 10)
+        
+    def attack(self, i, j):
+        for item in list_:
+            if item.x == i and item.y == j:
+                list_.remove(item)
+                return 
+
 
     def draw(self, image, pos):
         display.blit(image, pos)
@@ -198,28 +444,27 @@ def create_pieces():
         knight = Knight(i)
         list_.append(knight)
 
-
 def update_pieces():
-
     for i in list_:
         if i.choosed:
-            i.possible_moves()
+            i.draw_moves()
         i.draw(i.image, i.pos)
 
-def check_pieces(mouse_pos):
+def check_pieces(mouse_pos, side):
     for i in list_:
         if i.size[0][0] < mouse_pos[0] < i.size[0][1] and i.size[1][0] < mouse_pos[1] < i.size[1][1]:
-            i.choosed = True
-            return i
+            if side % 2 == i.color:
+                i.choosed = True
+                return i
 
 def calculate_pos(mouse_pos):
     x, y = mouse_pos
     
-    for row in board:
-        for cell in row:
-            if x in range(cell[0], cell[0]+WIDTH+1):
-                if y in range(cell[1], cell[1]+HEIGHT+1):
-                    return cell
+    for i in range(len(board)):
+        for j in range(len(board[i])):
+            if x in range(board[i][j][0], board[i][j][0]+WIDTH+1):
+                if y in range(board[i][j][1], board[i][j][1]+HEIGHT+1):
+                    return board[i][j], i, j
     
 create_pieces()
 
