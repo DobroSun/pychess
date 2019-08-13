@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-
+import numpy
 import pygame
 import abc
 
@@ -9,18 +9,35 @@ from display import *
 
 
 
-pygame.init()
 list_ = []
 
 class Piece(abc.ABC):
+    @abc.abstractmethod
     def possible_moves():
         pass
-
-    def draw_moves():
+    
+    @abc.abstractmethod
+    def can_attack():
         pass
 
-    def draw():
-        pass
+    def draw_moves(self):
+        possible_moves, attack_moves  = self.possible_moves()
+        possible_moves.extend(attack_moves)
+        
+        for move in possible_moves:
+            pygame.draw.circle(display, (192, 192, 192), 
+                               (board[move[0]][move[1]][0] + 30, board[move[0]][move[1]][1] + 30), 10)
+    
+    def draw(self, image, pos):
+        display.blit(image, pos)
+        self.size = (pos[0], pos[0] + WIDTH), (pos[1], pos[1] + HEIGHT)
+    
+    def attack(self, i, j):
+        for item in list_:
+            if item.x == i and item.y == j:
+                list_.remove(item)
+                return 
+
 
 
 
@@ -60,12 +77,6 @@ class Pawn(Piece, pygame.sprite.Sprite):
             
         return attack_moves
 
-    def attack(self, i, j):
-        for item in list_:
-            if item.x == i and item.y == j:
-                list_.remove(item)
-                return 
-
     def possible_moves(self):
         
         if self.color == 0:
@@ -104,18 +115,7 @@ class Pawn(Piece, pygame.sprite.Sprite):
         list_.append(tmp)
         return possible_moves, attack_moves
 
-    def draw_moves(self):
-        possible_moves, attack_moves  = self.possible_moves()
-        possible_moves.extend(attack_moves)
-        
-        for move in possible_moves:
-            pygame.draw.circle(display, (192, 192, 192), 
-                               (board[move[0]][move[1]][0] + 30, board[move[0]][move[1]][1] + 30), 10)
-        
-    def draw(self, image, pos):
-        display.blit(image, pos)
-        self.size = (pos[0], pos[0] + WIDTH), (pos[1], pos[1] + HEIGHT)
-
+    
 class King(Piece, pygame.sprite.Sprite):
     def __init__(self, ind):        
         self.choosed = False
@@ -127,14 +127,24 @@ class King(Piece, pygame.sprite.Sprite):
         
         if self.color:
             self.image = pygame.image.load('assets/Chess_klt60.png')
-            self.pos = (board[7][3][0], board[7][3][1])
-            self.x, self.y = 7, 3
+            self.pos = (board[7][4][0], board[7][4][1])
+            self.x, self.y = 7, 4
         else:
             self.image = pygame.image.load('assets/Chess_kdt60.png')
-            self.pos = (board[0][3][0], board[0][3][1])
-            self.x, self.y = 0, 3
+            self.pos = (board[0][4][0], board[0][4][1])
+            self.x, self.y = 0, 4
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
 
+    def can_attack(self, possible_moves):
+        attack_moves = []
+
+        for move in possible_moves:
+            for item in list_:
+                if item.x == move[0] and item.y == move[1] and item.color != self.color:
+                    possible_moves.remove(move)
+                    attack_moves.append(move)
+
+        return attack_moves
 
     def possible_moves(self):
         attack_moves = []
@@ -154,35 +164,16 @@ class King(Piece, pygame.sprite.Sprite):
         
         for move in possible_moves:
             for item in list_:
-                if item.x == move[0] and item.y == move[1]:
+                if item.x == move[0] and item.y == move[1] and item.color == self.color:
                     wrong_moves.append(move)
-                    if item.color != self.color:
-                        attack_moves.append(move)
 
         for move in wrong_moves:
             possible_moves.remove(move)
+        
+        attack_moves = self.can_attack(possible_moves)
 
         list_.append(tmp)
         return possible_moves, attack_moves
-
-    def draw_moves(self):
-        possible_moves, attack_moves  = self.possible_moves()
-        possible_moves.extend(attack_moves)
-        
-        for move in possible_moves:
-            pygame.draw.circle(display, (192, 192, 192), 
-                               (board[move[0]][move[1]][0] + 30, board[move[0]][move[1]][1] + 30), 10)
-        
-    def attack(self, i, j):
-        for item in list_:
-            if item.x == i and item.y == j:
-                list_.remove(item)
-                return 
-
-
-    def draw(self, image, pos):
-        display.blit(image, pos)
-        self.size = (pos[0], pos[0] + WIDTH), (pos[1], pos[1] + HEIGHT)
 
 class Queen(Piece, pygame.sprite.Sprite):
     def __init__(self, ind):        
@@ -195,25 +186,237 @@ class Queen(Piece, pygame.sprite.Sprite):
         
         if self.color:
             self.image = pygame.image.load('assets/Chess_qlt60.png')
-            self.pos = (board[7][4][0], board[7][4][1])
-            self.x, self.y = 7, 4
+            self.pos = (board[7][3][0], board[7][3][1])
+            self.x, self.y = 7, 3
         else:
             self.image = pygame.image.load('assets/Chess_qdt60.png')
-            self.pos = (board[0][4][0], board[0][4][1])
-            self.x, self.y = 0, 4
+            self.pos = (board[0][3][0], board[0][3][1])
+            self.x, self.y = 0, 3
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
+
+    
+    def can_attack(self, possible_moves):
+        attack_moves = []
+       
+ 
+        tmp = [self.x, self.y]
+        if (tmp[0] + 1, tmp[1] + 1) in possible_moves:
+            tmp = tmp[0] + 1, tmp[1] + 1
+            while tmp in possible_moves:
+                tmp = (tmp[0] + 1, tmp[1] + 1)
+        else:
+            tmp = tmp[0] + 1, tmp[1] + 1
+
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+
+        tmp = [self.x, self.y]
+        if (tmp[0] + 1, tmp[1] - 1) in possible_moves:
+            tmp = tmp[0] + 1, tmp[1] - 1
+            while tmp in possible_moves:
+                tmp = (tmp[0] + 1, tmp[1] - 1)
+        else:
+            tmp = tmp[0] + 1, tmp[1] - 1
+    
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+        tmp = [self.x, self.y]
+        if (tmp[0] - 1, tmp[1] + 1) in possible_moves:
+            tmp = tmp[0] - 1, tmp[1] + 1
+            while tmp in possible_moves:
+                tmp = (tmp[0] - 1, tmp[1] + 1)
+        else:
+            tmp = tmp[0] - 1, tmp[1] + 1
+            
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+        tmp = [self.x, self.y]
+        if (tmp[0] - 1, tmp[1] - 1) in possible_moves:
+            tmp = tmp[0] - 1, tmp[1] - 1
+            while tmp in possible_moves:
+                tmp = (tmp[0] - 1, tmp[1] - 1)
+        else:
+            tmp = tmp[0] - 1, tmp[1] - 1
+        
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+ 
+        
+        tmp = [self.x, self.y]
+        if (tmp[0] + 1, tmp[1]) in possible_moves:
+            tmp = tmp[0] + 1, tmp[1]
+            while tmp in possible_moves:
+                tmp = (tmp[0] + 1, tmp[1])
+        else:
+            tmp = tmp[0] + 1, tmp[1]
+
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+
+        tmp = [self.x, self.y]
+        if (tmp[0] - 1, tmp[1]) in possible_moves:
+            tmp = tmp[0] - 1, tmp[1]
+            while tmp in possible_moves:
+                tmp = (tmp[0] - 1, tmp[1])
+        else:
+            tmp = tmp[0] - 1, tmp[1]
+    
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+        tmp = [self.x, self.y]
+        if (tmp[0], tmp[1] + 1) in possible_moves:
+            tmp = tmp[0], tmp[1] + 1
+            while tmp in possible_moves:
+                tmp = (tmp[0], tmp[1] + 1)
+        else:
+            tmp = tmp[0], tmp[1] + 1
+            
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+        tmp = [self.x, self.y]
+        if (tmp[0], tmp[1] - 1) in possible_moves:
+            tmp = tmp[0], tmp[1] - 1
+            while tmp in possible_moves:
+                tmp = (tmp[0], tmp[1] - 1)
+        else:
+            tmp = tmp[0], tmp[1] - 1
+        
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+        return attack_moves
+
 
 
     def possible_moves(self):
-        pass
+        attack_moves = []
+        possible_moves = []
 
-    def draw_moves(self):
-        pass
+        tmp = 0
+        while 0 <= tmp <= 7:
+            if tmp == self.x:
+                tmp += 1
+                continue
+            possible_moves.append((tmp, self.y))
+            tmp += 1
+
+        tmp = 0
+        while 0 <= tmp <= 7:
+            if tmp == self.y:
+                tmp += 1
+                continue
+            possible_moves.append((self.x, tmp))
+            tmp += 1
 
 
-    def draw(self, image, pos):
-        display.blit(image, pos)
-        self.size = (pos[0], pos[0] + WIDTH), (pos[1], pos[1] + HEIGHT)
+        tmp = 0
+        while 0 <= tmp <= 7:
+            
+            if tmp == self.x:
+                tmp += 1
+                continue
+            possible_moves.append((tmp, self.y - self.x + tmp)) if 0 <= self.y - self.x + tmp <= 7 else possible_moves
+            possible_moves.append((tmp, self.x + self.y - tmp)) if 0 <= self.x + self.y - tmp <= 7 else possible_moves
+            possible_moves.append((tmp, self.y - self.x + tmp)) if 0 <= self.y - self.x + tmp <= 7 else possible_moves
+
+            tmp += 1
+           
+
+
+       
+
+        tmp = list_.pop(list_.index(self))
+
+        wrong_moves = []
+        
+        for move in possible_moves:
+            for item in list_:
+                if item.x == move[0] and item.y == move[1]:
+                    wrong_moves.append(move)
+                   
+                    if move[0] == self.x:       
+                        if self.y > move[1]:       
+                            cur = move[1]     
+                            while cur > 0:                                                    
+                                cur -= 1
+                                wrong_moves.append((move[0], cur))
+                        if self.y < move[1]:                           
+                            cur = move[1]                   
+                            while cur < 7:                                         
+                                cur += 1                    
+                                wrong_moves.append((move[0], cur))
+                    if move[1] == self.y:                
+                        if self.x > move[0]:                                
+                            cur = move[0]                
+                            while cur > 0:                                               
+                                cur -= 1          
+                                wrong_moves.append((cur, move[1]))
+
+                        if self.x < move[0]:                          
+                            cur = move[0]     
+                            while cur < 7:                                             
+                                cur += 1
+                                wrong_moves.append((cur, move[1]))
+                    
+                    if item.x > self.x and item.y < self.y:
+                        x, y = item.x, item.y
+                        while 0 < x < 7 and 0 < y < 7:
+                            x += 1
+                            y -= 1
+                            wrong_moves.append((x, y))
+
+                    if item.x > self.x and item.y > self.y:
+                        x, y = item.x, item.y
+                        while 0 < x < 7 and 0 < y < 7:
+                            x += 1
+                            y += 1
+                            wrong_moves.append((x, y))
+                    
+                    if item.x < self.x and item.y < self.y:
+                        x, y = item.x, item.y
+                        while 0 < x < 7 and 0 < y < 7:
+                            x -= 1
+                            y -= 1
+                            wrong_moves.append((x, y))
+                    
+                    if item.x < self.x and item.y > self.y:
+                        x, y = item.x, item.y
+                        while 0 < x < 7 and 0 < y < 7:
+                            x -= 1
+                            y += 1
+                            wrong_moves.append((x, y))
+
+
+
+
+        wrong_moves = set(wrong_moves)
+        possible_moves = set(possible_moves)
+
+        for move in wrong_moves:                                       
+            possible_moves.remove(move)  
+        
+        attack_moves = self.can_attack(possible_moves)
+        possible_moves = list(possible_moves)
+
+
+        list_.append(tmp)
+        return possible_moves, attack_moves
+
+
 
 class Rock(Piece, pygame.sprite.Sprite):
     def __init__(self, ind):        
@@ -233,6 +436,64 @@ class Rock(Piece, pygame.sprite.Sprite):
             self.pos = (board[0][ind-1][0], board[0][ind-1][1])
             self.x, self.y = 0, ind-1
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
+    
+    def can_attack(self, possible_moves):
+        attack_moves = []
+        
+        
+        tmp = [self.x, self.y]
+        if (tmp[0] + 1, tmp[1]) in possible_moves:
+            tmp = tmp[0] + 1, tmp[1]
+            while tmp in possible_moves:
+                tmp = (tmp[0] + 1, tmp[1])
+        else:
+            tmp = tmp[0] + 1, tmp[1]
+
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+
+        tmp = [self.x, self.y]
+        if (tmp[0] - 1, tmp[1]) in possible_moves:
+            tmp = tmp[0] - 1, tmp[1]
+            while tmp in possible_moves:
+                tmp = (tmp[0] - 1, tmp[1])
+        else:
+            tmp = tmp[0] - 1, tmp[1]
+    
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+        tmp = [self.x, self.y]
+        if (tmp[0], tmp[1] + 1) in possible_moves:
+            tmp = tmp[0], tmp[1] + 1
+            while tmp in possible_moves:
+                tmp = (tmp[0], tmp[1] + 1)
+        else:
+            tmp = tmp[0], tmp[1] + 1
+            
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+        tmp = [self.x, self.y]
+        if (tmp[0], tmp[1] - 1) in possible_moves:
+            tmp = tmp[0], tmp[1] - 1
+            while tmp in possible_moves:
+                tmp = (tmp[0], tmp[1] - 1)
+        else:
+            tmp = tmp[0], tmp[1] - 1
+        
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+        return attack_moves
+
+
+
 
     def possible_moves(self):
         attack_moves = []
@@ -266,63 +527,46 @@ class Rock(Piece, pygame.sprite.Sprite):
                 if item.x == move[0] and item.y == move[1]:
                     wrong_moves.append(move)
                    
-
                     if move[0] == self.x:       
                         if self.y > move[1]:       
                             cur = move[1]     
                             while cur > 0:                                                    
                                 cur -= 1
-                                wrong_moves.append((move[0], cur)) if (move[0], cur) not in wrong_moves else wrong_moves
+                                wrong_moves.append((move[0], cur))
                         if self.y < move[1]:                           
                             cur = move[1]                   
                             while cur < 7:                                         
                                 cur += 1                    
-                                wrong_moves.append((move[0], cur)) if (move[0], cur) not in wrong_moves else wrong_moves
-                    elif move[1] == self.y:                
+                                wrong_moves.append((move[0], cur))
+                    if move[1] == self.y:                
                         if self.x > move[0]:                                
                             cur = move[0]                
                             while cur > 0:                                               
                                 cur -= 1          
-                                wrong_moves.append((cur, move[1])) if (cur, move[1]) not in wrong_moves else wrong_moves
+                                wrong_moves.append((cur, move[1]))
+
                         if self.x < move[0]:                          
                             cur = move[0]     
                             while cur < 7:                                             
                                 cur += 1
-                                wrong_moves.append((cur, move[1])) if (cur, move[1]) not in wrong_moves else wrong_moves
-                    if item.color != self.color:
-                        attack_moves.append(move)
+                                wrong_moves.append((cur, move[1]))
+
+
+
+        wrong_moves = set(wrong_moves)
         
-        return possible_moves, wrong_moves                 
 
         for move in wrong_moves:                                       
             possible_moves.remove(move)  
         
-        attack_moves = [] if possible_moves == [] else attack_moves
-
+        attack_moves = self.can_attack(possible_moves)
+        
         list_.append(tmp)
         return possible_moves, attack_moves
 
        
 
-    def draw_moves(self):
-        possible_moves, attack_moves  = self.possible_moves()
-        possible_moves.extend(attack_moves)
-        
-        for move in possible_moves:
-            pygame.draw.circle(display, (192, 192, 192), 
-                               (board[move[0]][move[1]][0] + 30, board[move[0]][move[1]][1] + 30), 10)
-        
-    def attack(self, i, j):
-        for item in list_:
-            if item.x == i and item.y == j:
-                list_.remove(item)
-                return 
-
-
-    def draw(self, image, pos):
-        display.blit(image, pos)
-        self.size = (pos[0], pos[0] + WIDTH), (pos[1], pos[1] + HEIGHT)
-
+    
 class Bishop(Piece, pygame.sprite.Sprite):
     def __init__(self, ind):        
         self.choosed = False
@@ -341,11 +585,134 @@ class Bishop(Piece, pygame.sprite.Sprite):
             self.pos = (board[0][ind-1][0], board[0][ind-1][1])
             self.x, self.y = 0, ind-1
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
+     
+    def can_attack(self, possible_moves):
+        attack_moves = []
+
+         
+        tmp = [self.x, self.y]
+        if (tmp[0] + 1, tmp[1] + 1) in possible_moves:
+            tmp = tmp[0] + 1, tmp[1] + 1
+            while tmp in possible_moves:
+                tmp = (tmp[0] + 1, tmp[1] + 1)
+        else:
+            tmp = tmp[0] + 1, tmp[1] + 1
+
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
 
 
-    def draw(self, image, pos):
-        display.blit(image, pos)
-        self.size = (pos[0], pos[0] + WIDTH), (pos[1], pos[1] + HEIGHT)
+        tmp = [self.x, self.y]
+        if (tmp[0] + 1, tmp[1] - 1) in possible_moves:
+            tmp = tmp[0] + 1, tmp[1] - 1
+            while tmp in possible_moves:
+                tmp = (tmp[0] + 1, tmp[1] - 1)
+        else:
+            tmp = tmp[0] + 1, tmp[1] - 1
+    
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+        tmp = [self.x, self.y]
+        if (tmp[0] - 1, tmp[1] + 1) in possible_moves:
+            tmp = tmp[0] - 1, tmp[1] + 1
+            while tmp in possible_moves:
+                tmp = (tmp[0] - 1, tmp[1] + 1)
+        else:
+            tmp = tmp[0] - 1, tmp[1] + 1
+            
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+
+        tmp = [self.x, self.y]
+        if (tmp[0] - 1, tmp[1] - 1) in possible_moves:
+            tmp = tmp[0] - 1, tmp[1] - 1
+            while tmp in possible_moves:
+                tmp = (tmp[0] - 1, tmp[1] - 1)
+        else:
+            tmp = tmp[0] - 1, tmp[1] - 1
+        
+        for item in list_:
+            if tmp[0] == item.x and tmp[1] == item.y and item.color != self.color:
+                attack_moves.append(tmp)
+        
+        return attack_moves
+
+
+
+
+    def possible_moves(self):
+        attack_moves = []
+        possible_moves = []
+
+        tmp = 0
+        while 0 <= tmp <= 7:
+            
+            if tmp == self.x:
+                tmp += 1
+                continue
+            possible_moves.append((tmp, self.y - self.x + tmp)) if 0 <= self.y - self.x + tmp <= 7 else possible_moves
+            possible_moves.append((tmp, self.x + self.y - tmp)) if 0 <= self.x + self.y - tmp <= 7 else possible_moves
+            possible_moves.append((tmp, self.y - self.x + tmp)) if 0 <= self.y - self.x + tmp <= 7 else possible_moves
+
+            tmp += 1
+           
+
+        tmp = list_.pop(list_.index(self))
+
+        wrong_moves = []
+        
+        for move in possible_moves:
+            for item in list_:
+                if item.x == move[0] and item.y == move[1]:
+                    wrong_moves.append(move)
+                    
+
+                    if item.x > self.x and item.y < self.y:
+                        x, y = item.x, item.y
+                        while 0 < x < 7 and 0 < y < 7:
+                            x += 1
+                            y -= 1
+                            wrong_moves.append((x, y))
+
+                    if item.x > self.x and item.y > self.y:
+                        x, y = item.x, item.y
+                        while 0 < x < 7 and 0 < y < 7:
+                            x += 1
+                            y += 1
+                            wrong_moves.append((x, y))
+                    
+                    if item.x < self.x and item.y < self.y:
+                        x, y = item.x, item.y
+                        while 0 < x < 7 and 0 < y < 7:
+                            x -= 1
+                            y -= 1
+                            wrong_moves.append((x, y))
+                    
+                    if item.x < self.x and item.y > self.y:
+                        x, y = item.x, item.y
+                        while 0 < x < 7 and 0 < y < 7:
+                            x -= 1
+                            y += 1
+                            wrong_moves.append((x, y))
+
+        possible_moves = set(possible_moves)
+        wrong_moves = set(wrong_moves)
+
+        for move in wrong_moves:                                       
+            possible_moves.remove(move)  
+        
+        attack_moves = self.can_attack(possible_moves)
+        possible_moves = list(possible_moves)
+
+        list_.append(tmp)
+        return possible_moves, attack_moves
+
+
+     
 
 class Knight(Piece, pygame.sprite.Sprite):
     def __init__(self, ind):        
@@ -366,6 +733,18 @@ class Knight(Piece, pygame.sprite.Sprite):
             self.x, self.y = 0, ind-1
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
 
+    def can_attack(self, possible_moves):
+        attack_moves = []
+
+        for move in possible_moves:
+            for item in list_:
+                if item.x == move[0] and item.y == move[1] and item.color != self.color:
+                    possible_moves.remove(move)
+                    attack_moves.append(move)
+
+        return attack_moves
+
+
  
     def possible_moves(self):
         attack_moves = []
@@ -385,39 +764,18 @@ class Knight(Piece, pygame.sprite.Sprite):
         
         for move in possible_moves:
             for item in list_:
-                if item.x == move[0] and item.y == move[1]:
+                if item.x == move[0] and item.y == move[1] and item.color == self.color:
                     wrong_moves.append(move)
-                    if item.color != self.color:
-                        attack_moves.append(move)
 
         for move in wrong_moves:
             possible_moves.remove(move)
+            
+        attack_moves = self.can_attack(possible_moves)
 
         list_.append(tmp)
         return possible_moves, attack_moves
 
-    def draw_moves(self):
-        possible_moves, attack_moves  = self.possible_moves()
-        possible_moves.extend(attack_moves)
-        
-        for move in possible_moves:
-            pygame.draw.circle(display, (192, 192, 192), 
-                               (board[move[0]][move[1]][0] + 30, board[move[0]][move[1]][1] + 30), 10)
-        
-    def attack(self, i, j):
-        for item in list_:
-            if item.x == i and item.y == j:
-                list_.remove(item)
-                return 
-
-
-    def draw(self, image, pos):
-        display.blit(image, pos)
-        self.size = (pos[0], pos[0] + WIDTH), (pos[1], pos[1] + HEIGHT)
-
-
-
-
+      
 
 def create_pieces():
     for i in range(16):

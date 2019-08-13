@@ -31,6 +31,7 @@ while 1:
             else:
                 
                 mouse_pos, i, j = calculate_pos(mouse_pos)
+                print(i, j)
                 possible_moves, attack_moves = choosed.possible_moves()
                 if (i, j) in possible_moves:       
                     choosed.x, choosed.y = i, j
