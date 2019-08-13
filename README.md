@@ -4,10 +4,10 @@
 
 Usage
 -----
-'''
+```
 pip3 install -r requirements.txt
 ./main.py  # start game
-'''
+```
 TODO:
 -----
 * Refactor computing moves
