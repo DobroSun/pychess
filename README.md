@@ -1,5 +1,7 @@
 # Pychess
 
+A simpe python chess game written with pygame
+
 <img src="/assets/pychess.png">
 
 Usage
