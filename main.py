@@ -32,14 +32,29 @@ while 1:
                 
                 mouse_pos, i, j = calculate_pos(mouse_pos)
                 print(i, j)
-                possible_moves, attack_moves = choosed.possible_moves()
+
+                possible_moves, attack_moves, castle_moves = choosed.possible_moves()
                 if (i, j) in possible_moves:       
                     choosed.x, choosed.y = i, j
                     choosed.pos = mouse_pos
+                    
                     side += 1
                 elif (i, j) in attack_moves:
                     choosed.attack(i, j)
                     choosed.x, choosed.y = i, j
+                    choosed.pos = mouse_pos
+                    side += 1
+                elif (i, j) in castle_moves:
+                    rock = castle_moves[(i, j)]
+                    
+                    if j < rock.y:
+                        rock.x, rock.y = i, j - 1
+                    else:
+                        rock.x, rock.y = i, j + 1
+
+                    choosed.x, choosed.y = i, j
+    
+                    rock.pos = (board[rock.x][rock.y][0], board[rock.x][rock.y][1]) 
                     choosed.pos = mouse_pos
                     side += 1
                     

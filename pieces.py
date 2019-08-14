@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import numpy
 import pygame
 import abc
 
@@ -21,8 +20,9 @@ class Piece(abc.ABC):
         pass
 
     def draw_moves(self):
-        possible_moves, attack_moves  = self.possible_moves()
+        possible_moves, attack_moves, castling_moves  = self.possible_moves()
         possible_moves.extend(attack_moves)
+        possible_moves.extend(castling_moves)
         
         for move in possible_moves:
             pygame.draw.circle(display, (192, 192, 192), 
@@ -113,10 +113,12 @@ class Pawn(Piece, pygame.sprite.Sprite):
             
         attack_moves = self.can_attack()
         list_.append(tmp)
-        return possible_moves, attack_moves
+
+        return possible_moves, attack_moves, {}
 
     
 class King(Piece, pygame.sprite.Sprite):
+    
     def __init__(self, ind):        
         self.choosed = False
         self.ind = ind
@@ -133,6 +135,7 @@ class King(Piece, pygame.sprite.Sprite):
             self.image = pygame.image.load('assets/Chess_kdt60.png')
             self.pos = (board[0][4][0], board[0][4][1])
             self.x, self.y = 0, 4
+        self.castling = True
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
 
     def can_attack(self, possible_moves):
@@ -151,7 +154,7 @@ class King(Piece, pygame.sprite.Sprite):
         possible_moves = [(self.x + 1, self.y), (self.x - 1, self.y), (self.x, self.y + 1), (self.x, self.y - 1), \
                           (self.x + 1, self.y + 1), (self.x + 1, self.y - 1), (self.x - 1, self.y + 1), \
                           (self.x - 1, self.y - 1)]
-
+        
         moves = []
         for move in possible_moves:
             if (0 <= move[0] <= 7) and (0 <= move[1] <= 7):
@@ -171,9 +174,54 @@ class King(Piece, pygame.sprite.Sprite):
             possible_moves.remove(move)
         
         attack_moves = self.can_attack(possible_moves)
+         
+        long_, sh_ = self.check_castling()
+        castle_moves = self.castle(long_, sh_) if self.castling else {}
+
 
         list_.append(tmp)
-        return possible_moves, attack_moves
+        return possible_moves, attack_moves, castle_moves
+        
+    def check_castling(self):
+        sh_castle = [(self.x, self.y + 1), (self.x, self.y + 2)]
+        long_castle = [(self.x, self.y - 1), (self.x, self.y - 2), (self.x, self.y - 3)]
+        
+        sh_rock = None
+        long_rock = None
+
+        rock_pos = [(self.x, self.y + 3), (self.x, self.y - 4)]
+        for move in sh_castle:
+            for item in list_:        
+                if item.x == move[0] and item.y == move[1]:
+                    sh_rock = 0
+                    break
+        if sh_rock is None:
+            for item in list_:
+                if item.x == rock_pos[0][0] and item.y == rock_pos[0][1] and item.ind in [0, 7, 1, 8] \
+                                        and item.move == 0:       
+                    
+                    sh_rock = item
+
+        for move in long_castle:
+            for item in list_:
+                if item.x == move[0] and item.y == move[1]:
+                    long_rock = 0
+                    break
+        if long_rock is None:
+            for item in list_:
+                if item.x == rock_pos[1][0] and item.y == rock_pos[1][1] and item.ind in [0, 7, 1, 8] \
+                                        and item.move == 0 and self.move == 0:
+                    long_rock = item
+
+        return long_rock, sh_rock
+
+    def castle(self, long_, sh_):
+        castling_moves = {}
+        if long_:
+            castling_moves[(self.x, self.y - 2)] = long_
+        if sh_:
+            castling_moves[(self.x, self.y + 2)]  = sh_
+        return castling_moves
 
 class Queen(Piece, pygame.sprite.Sprite):
     def __init__(self, ind):        
@@ -414,7 +462,7 @@ class Queen(Piece, pygame.sprite.Sprite):
 
 
         list_.append(tmp)
-        return possible_moves, attack_moves
+        return possible_moves, attack_moves, {}
 
 
 
@@ -435,6 +483,7 @@ class Rock(Piece, pygame.sprite.Sprite):
             self.image = pygame.image.load('assets/Chess_rdt60.png')
             self.pos = (board[0][ind-1][0], board[0][ind-1][1])
             self.x, self.y = 0, ind-1
+        self.move = 0
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
     
     def can_attack(self, possible_moves):
@@ -562,7 +611,7 @@ class Rock(Piece, pygame.sprite.Sprite):
         attack_moves = self.can_attack(possible_moves)
         
         list_.append(tmp)
-        return possible_moves, attack_moves
+        return possible_moves, attack_moves, {}
 
        
 
@@ -709,7 +758,7 @@ class Bishop(Piece, pygame.sprite.Sprite):
         possible_moves = list(possible_moves)
 
         list_.append(tmp)
-        return possible_moves, attack_moves
+        return possible_moves, attack_moves, {}
 
 
      
@@ -773,7 +822,7 @@ class Knight(Piece, pygame.sprite.Sprite):
         attack_moves = self.can_attack(possible_moves)
 
         list_.append(tmp)
-        return possible_moves, attack_moves
+        return possible_moves, attack_moves, {}
 
       
 
