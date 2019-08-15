@@ -34,17 +34,23 @@ while 1:
                 print(i, j)
 
                 possible_moves, attack_moves, castle_moves = choosed.possible_moves()
-                if (i, j) in possible_moves:       
+                if (i, j) in possible_moves:   
+                    if hasattr(choosed, "move"):
+                        choosed.move += 1
                     choosed.x, choosed.y = i, j
                     choosed.pos = mouse_pos
                     
                     side += 1
                 elif (i, j) in attack_moves:
+                    if hasattr(choosed, "move"):
+                        choosed.move += 1        
                     choosed.attack(i, j)
                     choosed.x, choosed.y = i, j
                     choosed.pos = mouse_pos
                     side += 1
                 elif (i, j) in castle_moves:
+                    if hasattr(choosed, "move"):
+                        choosed.move += 1
                     rock = castle_moves[(i, j)]
                     
                     if j < rock.y:
