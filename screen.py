@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 import pygame
+from pygame.locals import *
+
 
 WIDTH = 60
 HEIGHT = 60
 
 
 pygame.init()
+
 
 display = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("chess")

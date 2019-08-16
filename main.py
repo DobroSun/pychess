@@ -6,7 +6,7 @@ from pygame.locals import *
 import sys
 import os.path
 
-from display import *
+from screen import *
 from pieces import *
 
 choosed = None
