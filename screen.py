@@ -23,7 +23,16 @@ png_rect = surf.get_rect(center=(400, 300))
 display.blit(surf, png_rect)
 
 
-board = [[(x, i) for x in range(8)] for i in range(8)]
-board = [[(x[0] * 60, x[1] * 60) for x in i] for i in board]
-board = [[(x[0] + 158, x[1] + 58) for x  in i] for i in board]
+def foo(x):
+    x = list(x)
+    x[0] *= 60
+    x[0] += 158
+         
+    x[1] *= 60
+    x[1] += 58
+    return tuple(x)
 
+
+board = [[(x, i) for x in range(8)] for i in range(8)]
+board = list(map(lambda x: list(map(foo, x)), board))
+print(board)
