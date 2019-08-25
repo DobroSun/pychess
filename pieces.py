@@ -145,8 +145,10 @@ class King(Piece, pygame.sprite.Sprite):
         for move in possible_moves:
             for item in list_:
                 if item.x == move[0] and item.y == move[1] and item.color != self.color:
-                    possible_moves.remove(move)
                     attack_moves.append(move)
+ 
+        for move in attack_moves:
+            possible_moves.remove(move)
 
         return attack_moves
 
@@ -789,13 +791,13 @@ class Knight(Piece, pygame.sprite.Sprite):
         for move in possible_moves:
             for item in list_:
                 if item.x == move[0] and item.y == move[1] and item.color != self.color:
-                    possible_moves.remove(move)
                     attack_moves.append(move)
+        
+        for move in attack_moves:
+            possible_moves.remove(move)
 
         return attack_moves
 
-
- 
     def possible_moves(self):
         attack_moves = []
         possible_moves = [(self.x + 2, self.y + 1), (self.x + 2, self.y - 1), (self.x + 1, self.y + 2), \
