@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
+import sys
 import pygame
 from pygame.locals import *
 
-import sys
-import os.path
 
 from screen import *
 from pieces import *
@@ -31,26 +30,25 @@ while 1:
             else:
                 
                 mouse_pos, i, j = calculate_pos(mouse_pos)
-                print(i, j)
 
                 possible_moves, attack_moves, castle_moves = choosed.possible_moves()
                 if (i, j) in possible_moves:   
-                    if hasattr(choosed, "move"):
-                        choosed.move += 1
+                    increase_move(choosed)
+
                     choosed.x, choosed.y = i, j
                     choosed.pos = mouse_pos
                     
                     side += 1
                 elif (i, j) in attack_moves:
-                    if hasattr(choosed, "move"):
-                        choosed.move += 1        
+                    increase_move(choosed)
+                    
                     choosed.attack(i, j)
                     choosed.x, choosed.y = i, j
                     choosed.pos = mouse_pos
                     side += 1
                 elif (i, j) in castle_moves:
-                    if hasattr(choosed, "move"):
-                        choosed.move += 1
+                    increase_move(choosed)
+
                     rock = castle_moves[(i, j)]
                     
                     if j < rock.y:

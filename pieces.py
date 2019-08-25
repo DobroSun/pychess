@@ -6,11 +6,14 @@ import abc
 
 from screen import *
 
-
-
 list_ = []
 
 class Piece(abc.ABC):
+    def __init__(self, ind):
+        self.move = 0
+        self.ind = ind
+        self.choosed = False
+
     @abc.abstractmethod
     def possible_moves():
         pass
@@ -43,8 +46,9 @@ class Piece(abc.ABC):
 
 class Pawn(Piece, pygame.sprite.Sprite):
     def __init__(self, ind):        
-        self.choosed = False
-        self.ind = ind
+        super().__init__(ind)
+        print(board)
+
         self.color = 1
         if ind >= 8:
             self.color = 0
@@ -120,8 +124,8 @@ class Pawn(Piece, pygame.sprite.Sprite):
 class King(Piece, pygame.sprite.Sprite):
     
     def __init__(self, ind):        
-        self.choosed = False
-        self.ind = ind
+        super().__init__(ind)
+
         self.color = 1
         if ind == 1:
             self.color = 0
@@ -135,8 +139,8 @@ class King(Piece, pygame.sprite.Sprite):
             self.image = pygame.image.load('assets/Chess_kdt60.png')
             self.pos = (board[0][4][0], board[0][4][1])
             self.x, self.y = 0, 4
+        
         self.castling = True
-        self.move = 0
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
 
     def can_attack(self, possible_moves):
@@ -182,8 +186,8 @@ class King(Piece, pygame.sprite.Sprite):
         castle_moves = self.castle(long_, sh_) if self.castling else {}
 
 
-        list_.append(tmp)
-        return possible_moves, attack_moves, castle_moves
+        list_.append(tmp) 
+        return possible_moves, attack_moves, castle_moves 
         
     def check_castling(self):
         sh_castle = [(self.x, self.y + 1), (self.x, self.y + 2)]
@@ -228,8 +232,8 @@ class King(Piece, pygame.sprite.Sprite):
 
 class Queen(Piece, pygame.sprite.Sprite):
     def __init__(self, ind):        
-        self.choosed = False
-        self.ind = ind
+        super().__init__(ind)
+        
         self.color = 1
         if ind == 1:
             self.color = 0
@@ -471,8 +475,8 @@ class Queen(Piece, pygame.sprite.Sprite):
 
 class Rock(Piece, pygame.sprite.Sprite):
     def __init__(self, ind):        
-        self.choosed = False
-        self.ind = ind
+        super().__init__(ind)
+        
         self.color = 1
         if ind == 1 or ind == 8:
             self.color = 0
@@ -486,7 +490,7 @@ class Rock(Piece, pygame.sprite.Sprite):
             self.image = pygame.image.load('assets/Chess_rdt60.png')
             self.pos = (board[0][ind-1][0], board[0][ind-1][1])
             self.x, self.y = 0, ind-1
-        self.move = 0
+        
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
     
     def can_attack(self, possible_moves):
@@ -621,8 +625,8 @@ class Rock(Piece, pygame.sprite.Sprite):
     
 class Bishop(Piece, pygame.sprite.Sprite):
     def __init__(self, ind):        
-        self.choosed = False
-        self.ind = ind
+        super().__init__(ind)
+
         self.color = 1
         if ind == 3 or ind == 6:
             self.color = 0
@@ -636,6 +640,7 @@ class Bishop(Piece, pygame.sprite.Sprite):
             self.image = pygame.image.load('assets/Chess_bdt60.png')
             self.pos = (board[0][ind-1][0], board[0][ind-1][1])
             self.x, self.y = 0, ind-1
+
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
      
     def can_attack(self, possible_moves):
@@ -768,8 +773,8 @@ class Bishop(Piece, pygame.sprite.Sprite):
 
 class Knight(Piece, pygame.sprite.Sprite):
     def __init__(self, ind):        
-        self.choosed = False
-        self.ind = ind
+        super().__init__(ind)
+
         self.color = 1
         if ind == 2 or ind == 7:
             self.color = 0
@@ -783,6 +788,7 @@ class Knight(Piece, pygame.sprite.Sprite):
             self.image = pygame.image.load('assets/Chess_ndt60.png')
             self.pos = (board[0][ind-1][0], board[0][ind-1][1])
             self.x, self.y = 0, ind-1
+        
         self.size = (self.pos[0], self.pos[0] + WIDTH), (self.pos[1], self.pos[1] + HEIGHT)
 
     def can_attack(self, possible_moves):
@@ -827,7 +833,6 @@ class Knight(Piece, pygame.sprite.Sprite):
         list_.append(tmp)
         return possible_moves, attack_moves, {}
 
-      
 
 def create_pieces():
     for i in range(16):
@@ -867,17 +872,4 @@ def check_pieces(mouse_pos, side):
                 i.choosed = True
                 return i
 
-def calculate_pos(mouse_pos):
-    x, y = mouse_pos
-    
-    for i in range(len(board)):
-        for j in range(len(board[i])):
-            if x in range(board[i][j][0], board[i][j][0]+WIDTH+1):
-                if y in range(board[i][j][1], board[i][j][1]+HEIGHT+1):
-                    return board[i][j], i, j
-    
 create_pieces()
-
-
-
-
